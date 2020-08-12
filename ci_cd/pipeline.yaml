@@ -1,0 +1,76 @@
+resources:
+- name: git-import-repo
+  type: git
+  source:
+    uri: git@github.com:zapatacomputing/git-import.git
+    branch: master
+    private_key: {{zapatabot-ssh}}
+- name: git-import-release
+  type: github-release
+  source:
+    owner: zapatacomputing
+    repository: git-import
+    access_token: {{zapatabot-github-access-token}}
+    pre_release: true
+    release: true
+- name: git-import-prerelease
+  type: github-release
+  source:
+    owner: zapatacomputing
+    repository: git-import
+    access_token: {{zapatabot-github-access-token}}
+    pre_release: true
+    release: false
+  
+jobs:
+# Run tests
+- name: unit-test
+  plan:
+  - get: git-import-repo
+    trigger: true
+  - task: run-tests
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: 
+          repository: zapatacomputing/cicd
+          tag: latest
+      inputs:
+      - name: git-import-repo
+        path: git-import
+      run:
+        path: git-import/ci_cd/test.sh
+      params:
+        ZAPATABOT_SSH: {{zapatabot-ssh}}
+- name: prerelease-to-github
+  plan:
+  - get: git-import-repo
+    passed: [unit-test]
+    trigger: true
+  - get: git-import-release
+  - task: build-binaries
+    params:
+    # NEW_TAG: "v0.0.1" ONLY REQUIRED IF YOU WANT TO FORCE A VERSION RELEASE
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: 
+          repository: golang
+          tag: 1.14
+      inputs:
+      - name: git-import-repo
+        path: git-import
+      - name: git-import-release
+        path: current-release
+      outputs:
+      - name: release-artifacts
+      run:
+        path: git-import/ci_cd/build.sh
+  - put: git-import-prerelease
+    params:
+      name: release-artifacts/name
+      tag: release-artifacts/tag
+      globs:
+      - release-artifacts/git-import-*
