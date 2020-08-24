@@ -2,15 +2,81 @@ package main_test
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
+	"github.com/onsi/gomega/gexec"
 
 	. "github.com/zapatacomputing/git-import"
 )
 
 var _ = Describe("Main", func() {
+	var (
+		url       string
+		dir       string
+		branch    string
+		tag       string
+		pathToCMD string
+		session   *gexec.Session
+		command   *exec.Cmd
+		err       error
+	)
+
+	BeforeEach(func() {
+		pathToCMD, err = gexec.Build("github.com/zapatacomputing/git-import")
+		Expect(err).ShouldNot(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		curPath, err := os.Getwd()
+		Expect(err).ShouldNot(HaveOccurred())
+		os.RemoveAll(filepath.Join(curPath, dir))
+	})
+
+	Context("with all the arguments passed correctly", func() {
+		BeforeEach(func() {
+			url = "git@github.com:zapatacomputing/test.git"
+			dir = "test"
+			branch = "master"
+			tag = ""
+			command = exec.Command(pathToCMD, "-url", url, "-dir", dir, "-branch", branch, "-tag", tag)
+		})
+
+		It("should exit successfully", func() {
+			session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
+			Expect(err).ShouldNot(HaveOccurred())
+			time.Sleep(10 * time.Second)
+			Expect(session).Should(gexec.Exit())
+			Expect(session.Out).Should(gbytes.Say(`.*Enumerating objects*.`))
+			Expect(session.Out).Should(gbytes.Say(`.*Counting objects*.`))
+			Expect(session.Out).Should(gbytes.Say(`.*Compressing objects*.`))
+			Expect(session.Out).Should(gbytes.Say(`.*Total*.`))
+		})
+	})
+
+	Context("with a missing url", func() {
+		BeforeEach(func() {
+			url = ""
+			dir = "test"
+			branch = "master"
+			tag = ""
+			command = exec.Command(pathToCMD, "-url", url, "-dir", dir, "-branch", branch, "-tag", tag)
+		})
+
+		It("should fail", func() {
+			session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
+			Expect(err).ShouldNot(HaveOccurred())
+			time.Sleep(2 * time.Second)
+			Expect(session).Should(gexec.Exit(1))
+		})
+	})
+})
+
+var _ = Describe("Clone", func() {
 	var url string
 	var dir string
 	var branch string
