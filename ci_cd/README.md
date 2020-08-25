@@ -2,10 +2,10 @@
 
 ## Setting The Concourse *PLATFORM* Team
 
-1. This pipeline belongs in the `platform` team. If no `platform` concourse team exists run the following:
-    - `fly -t prod login --concourse-url https://cicd.zapos.io -u zapatabot -p <PASSWORD IN LASTPASS> -n platform`
+1. This pipeline belongs in the `Platform` team. If no `Platform` concourse team exists run the following:
+    - `fly -t prod login --concourse-url https://cicd.zapos.io -u zapadmin -p <ZAPADMIN PASSWORD IN LASTPASS>`
     - `fly -t prod sync`
-    - `fly -t prod set-team -n platform --local-user=zapatabot`
+    - `fly -t prod set-team -n "Platform" --oauth-group=Platform`
     - `fly -t prod logout`
 
 ## Setting The Pipeline
@@ -19,7 +19,7 @@
 
 1. Once the secrets are obtained, the pipeline is then set with the following:
        
-       - `fly -t prod login --concourse-url https://cicd.zapos.io -u zapatabot -p <ZAPATABOT PASSWORD> -n platform`
+       - `fly -t prod login -n "Platform"`
        - `fly -t prod set-pipeline -p git-import -c pipeline.yaml --load-vars-from=creds.yaml`
 
 1. In order to enable all zapatistas to see our awesome pipeline we can expose the status and the configuration WITHOUT exposing the logs/secrets. Thus run the following:
