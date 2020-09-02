@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 func main() {
 	url := flag.String("url", "", "the url of the git repository to clone")
 	dir := flag.String("dir", "", "the location to put the cloned repository")
-	branch := flag.String("branch", "master", "the repository branch to clone")
+	branch := flag.String("branch", "", "the repository branch to clone")
 	tag := flag.String("tag", "", "the tag to clone")
 	flag.Parse()
 
@@ -36,6 +37,14 @@ func main() {
 func Clone(url string, dir string, branch string, tag string) error {
 	ctx, cancel := context.WithTimeout(context.TODO(), 300*time.Second)
 	defer cancel()
+
+	if tag == "" && branch == "" {
+		return fmt.Errorf("Please specify either a branch or a tag.")
+	}
+
+	if tag != "" && branch != "" {
+		return fmt.Errorf("Please specify only the branch or only the tag.")
+	}
 
 	var referenceName plumbing.ReferenceName
 	if branch != "" {

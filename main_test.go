@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -87,7 +88,7 @@ var _ = Describe("Clone", func() {
 	BeforeEach(func() {
 		url = "git@github.com:zapatacomputing/test.git"
 		dir = "test"
-		branch = "master"
+		branch = ""
 		tag = ""
 		curPath, err := os.Getwd()
 		Expect(err).ShouldNot(HaveOccurred())
@@ -101,6 +102,14 @@ var _ = Describe("Clone", func() {
 	})
 
 	Context("with a valid public repo, valid path and filled branch and and empty tag", func() {
+		BeforeEach(func() {
+			branch = "master"
+		})
+
+		AfterEach(func() {
+			branch = ""
+		})
+
 		It("should succeed", func() {
 			err = Clone(url, dir, branch, tag)
 			Expect(err).ShouldNot(HaveOccurred())
@@ -112,37 +121,32 @@ var _ = Describe("Clone", func() {
 
 	Context("with a valid public repo, valid path and filled branch and filled tag", func() {
 		BeforeEach(func() {
+			branch = "master"
 			tag = "v1.0.0"
 		})
 
 		AfterEach(func() {
+			branch = ""
 			tag = ""
 		})
 
-		It("should succeed", func() {
+		It("should fail", func() {
 			err = Clone(url, dir, branch, tag)
-			Expect(err).ShouldNot(HaveOccurred())
+			Expect(err).Should(HaveOccurred())
+			Expect(strings.ToLower(err.Error())).Should(ContainSubstring("please specify only the branch or only the tag"))
 
 			_, err := os.Stat(expectedFilePath)
-			Expect(err).ShouldNot(HaveOccurred())
+			Expect(err).Should(HaveOccurred())
 		})
 	})
 
 	Context("with a valid public repo, valid path and empty branch and empty tag", func() {
-		BeforeEach(func() {
-			branch = ""
-		})
-
-		AfterEach(func() {
-			branch = "master"
-		})
-
-		It("should succeed", func() {
+		It("should fail", func() {
 			err = Clone(url, dir, branch, tag)
-			Expect(err).ShouldNot(HaveOccurred())
+			Expect(err).Should(HaveOccurred())
 
 			_, err := os.Stat(expectedFilePath)
-			Expect(err).ShouldNot(HaveOccurred())
+			Expect(err).Should(HaveOccurred())
 		})
 	})
 
@@ -155,7 +159,7 @@ var _ = Describe("Clone", func() {
 			tag = ""
 		})
 
-		It("should succeed", func() {
+		It("should fail", func() {
 			err = Clone(url, dir, branch, tag)
 			Expect(err).Should(HaveOccurred())
 
@@ -170,7 +174,7 @@ var _ = Describe("Clone", func() {
 		})
 
 		AfterEach(func() {
-			branch = "master"
+			branch = ""
 		})
 
 		It("should fail", func() {
