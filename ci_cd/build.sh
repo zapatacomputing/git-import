@@ -23,7 +23,7 @@ for GOOS in darwin linux windows; do
   for GOARCH in 386 amd64; do
     echo "--------------------------------"
     export GOOS GOARCH
-    go build -mod=vendor -v -o git-import-$GOOS-$GOARCH
+    go build  -v -o git-import-$GOOS-$GOARCH
   done
 done
 
