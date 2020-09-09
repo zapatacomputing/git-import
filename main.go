@@ -8,6 +8,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/zapatacomputing/git-import/ssh"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -35,6 +36,10 @@ func main() {
 // Clone clones the git repository at the specified url to the given location
 // Using a 1-commit clone of the given branch
 func Clone(url string, dir string, branch string, tag string) error {
+	err1 := ssh.Check(url)
+	if err1 != nil {
+		return fmt.Errorf("git-import: unable to import from [%s] due to error : %w", url, err1)
+	}
 	ctx, cancel := context.WithTimeout(context.TODO(), 300*time.Second)
 	defer cancel()
 
