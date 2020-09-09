@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/agent"
@@ -24,7 +25,7 @@ func NewAgentClient() (*AgentClient, error) {
 		return nil, fmt.Errorf("please start a new ssh-agent or register one(via SSH_AUTH_SOCK environment variable) and try again")
 	}
 	log.Infof("Attempt to dial in to Unix socket at [%s]...", sshAuthSock)
-	conn, err := net.Dial("unix", sshAuthSock)
+	conn, err := net.DialTimeout("unix", sshAuthSock, time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to ssh-agent specified by environment variable SSH_AUTH_SOCK[%s]: %w", sshAuthSock, err)
 	}
