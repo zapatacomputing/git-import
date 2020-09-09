@@ -24,7 +24,6 @@ func NewAgentClient() (*AgentClient, error) {
 	if sshAuthSock == "" {
 		return nil, fmt.Errorf("please start a new ssh-agent or register one(via SSH_AUTH_SOCK environment variable) and try again")
 	}
-	log.Infof("Attempt to dial in to Unix socket at [%s]...", sshAuthSock)
 	conn, err := net.DialTimeout("unix", sshAuthSock, time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to ssh-agent specified by environment variable SSH_AUTH_SOCK[%s]: %w", sshAuthSock, err)

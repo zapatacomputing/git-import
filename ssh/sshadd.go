@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // AddDefaultKeys  adds RSA or DSA identities to the authentication agent, ssh-agent(1) located unfder ~/.ssh.
@@ -19,13 +17,11 @@ func AddDefaultKeys() error {
 	if err != nil {
 		return fmt.Errorf("could not find 'ssh-add' command")
 	}
-	log.Infoln("adding default ssh keys from ~/.ssh")
 	cmd := exec.Command(bin)
 	cmd.Stderr = new(bytes.Buffer)
-	out, err := cmd.Output()
+	_, err = cmd.Output()
 	if err != nil {
 		return fmt.Errorf("%s failed: %v\n%s", strings.Join(cmd.Args, " "), err, cmd.Stderr)
 	}
-	log.Infoln(string(out))
 	return nil
 }

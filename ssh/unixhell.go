@@ -18,13 +18,11 @@ func RunInUnixShell() bool {
 		return false
 	}
 	cmd := exec.Command(bin, "-c", "uname", "-s")
-	cmd.Env = []string{} // Do not let the user's environment influence ssh-agent behavior.
 	cmd.Stderr = new(bytes.Buffer)
-	out, err := cmd.Output()
+	_, err = cmd.Output()
 	if err != nil {
 		log.Errorf("%s failed: %v\n%s", strings.Join(cmd.Args, " "), err, cmd.Stderr)
 		return false
 	}
-	log.Infoln("running in Unix-like shell environment : ", string(out))
 	return true
 }
