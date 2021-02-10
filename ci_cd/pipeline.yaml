@@ -5,26 +5,35 @@ resources:
     uri: git@github.com:zapatacomputing/git-import.git
     branch: master
     private_key: {{zapatabot-ssh}}
-- name: git-import-release
-  type: github-release
+- name: git-import-builds
+  type: s3
   source:
-    owner: zapatacomputing
-    repository: git-import
-    access_token: {{zapatabot-github-access-token}}
-    pre_release: true
-    release: true
+    bucket: zapco-concourse-cicd-fc4hhsom4p
+    regexp: git-import/build-(.*).tgz
+    access_key_id: {{concourse-cicd-api-only-access-key-id}}
+    secret_access_key: {{concourse-cicd-api-only-secret-access-key}}
 - name: git-import-prerelease
   type: github-release
   source:
     owner: zapatacomputing
     repository: git-import
-    access_token: {{zapatabot-github-access-token}}
-    pre_release: true
     release: false
-  
+    pre_release: true
+    access_token: {{zapatabot-github-access-token}}
+    tag_filter: ^\w+.(\w+\.\w+)
+- name: git-import-release
+  type: github-release
+  source:
+    owner: zapatacomputing
+    repository: git-import
+    release: true
+    pre_release: false
+    access_token: {{zapatabot-github-access-token}}
+    tag_filter: ^\w+.(\w+\.\w+)
 jobs:
-# Run tests
-- name: unit-test
+# Trigger Build
+- name: run-tests
+  serial: true
   plan:
   - get: git-import-repo
     trigger: true
@@ -36,41 +45,71 @@ jobs:
         source: 
           repository: zapatacomputing/cicd
           tag: latest
+      params:
+        ZAPATABOT_SSH: {{zapatabot-ssh}}
       inputs:
       - name: git-import-repo
         path: git-import
       run:
         path: git-import/ci_cd/test.sh
-      params:
-        ZAPATABOT_SSH: {{zapatabot-ssh}}
-- name: prerelease-to-github
+- name: build-to-s3
+  serial: true
   plan:
   - get: git-import-repo
-    passed: [unit-test]
+    passed: [run-tests]
     trigger: true
-  - get: git-import-release
   - task: build-binaries
     params:
-    # NEW_TAG: "v0.0.1" ONLY REQUIRED IF YOU WANT TO FORCE A VERSION RELEASE
+      STAR_VERSION: {{star-name-version}}
     config:
       platform: linux
       image_resource:
         type: docker-image
         source: 
-          repository: golang
-          tag: 1.14
+          repository: zapatacomputing/z-quantum-default
+          tag: latest
       inputs:
       - name: git-import-repo
         path: git-import
-      - name: git-import-release
-        path: current-release
       outputs:
       - name: release-artifacts
       run:
         path: git-import/ci_cd/build.sh
+  - put: git-import-builds
+    params:
+        file: release-artifacts/build-*.tgz
+# Promote Build to Pre-Release
+- name: promote-s3-build-to-github-prerelease
+  plan:
+  - get: git-import-builds
+    passed: [build-to-s3]
+    params:
+      unpack: true
   - put: git-import-prerelease
     params:
-      name: release-artifacts/name
-      tag: release-artifacts/tag
+      name: git-import-builds/version
+      tag: git-import-builds/version
+      commitish: git-import-builds/commit_sha
       globs:
-      - release-artifacts/git-import-*
+      - git-import-builds/git-import-*
+# Promote Pre-Release to Release
+- name: promote-github-prerelease-to-release
+  plan:
+  - get: git-import-prerelease
+  - put: git-import-release
+    params:
+      name: git-import-prerelease/tag
+      tag: git-import-prerelease/tag
+      commitish: git-import-prerelease/commit_sha
+      globs:
+      - git-import-prerelease/git-import-*
+
+groups:
+  - name: build
+    jobs:
+      - run-tests
+      - build-to-s3
+  - name: promotion
+    jobs:
+     - promote-s3-build-to-github-prerelease
+     - promote-github-prerelease-to-release
