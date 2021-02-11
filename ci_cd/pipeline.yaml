@@ -66,8 +66,8 @@ jobs:
       image_resource:
         type: docker-image
         source: 
-          repository: zapatacomputing/z-quantum-default
-          tag: latest
+          repository: golang
+          tag: 1.14
       inputs:
       - name: git-import-repo
         path: git-import
