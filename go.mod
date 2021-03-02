@@ -1,6 +1,6 @@
 module github.com/zapatacomputing/git-import
 
-go 1.14
+go 1.16
 
 require (
 	github.com/onsi/ginkgo v1.12.1

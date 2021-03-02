@@ -7,8 +7,15 @@ cd git-import
 # Build all the neeeded binaries
 echo "Building with $(go version)"
 go get -u github.com/mitchellh/gox
-for GOOS in darwin linux windows; do
+for GOOS in linux windows; do
   for GOARCH in 386 amd64; do
+    export GOOS GOARCH
+    go build -v -o git-import-$GOOS-$GOARCH
+  done
+  echo "------------------------------------------------"
+done
+for GOOS in darwin; do
+  for GOARCH in arm64 amd64; do
     export GOOS GOARCH
     go build -v -o git-import-$GOOS-$GOARCH
   done
