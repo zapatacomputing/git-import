@@ -8,10 +8,10 @@ resources:
 - name: git-import-builds
   type: s3
   source:
-    bucket: zapco-concourse-cicd-fc4hhsom4p
+    bucket: zapata-cicd-development-packages
     regexp: git-import/build-(.*).tgz
-    access_key_id: {{concourse-cicd-api-only-access-key-id}}
-    secret_access_key: {{concourse-cicd-api-only-secret-access-key}}
+    access_key_id: ((development-package-storage-aws-access-key-id))
+    secret_access_key: ((development-package-storage-aws-secret-access-key))
 - name: git-import-prerelease
   type: github-release
   source:
