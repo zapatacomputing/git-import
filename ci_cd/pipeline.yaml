@@ -4,7 +4,7 @@ resources:
   source:
     uri: git@github.com:zapatacomputing/git-import.git
     branch: master
-    private_key: {{zapatabot-ssh}}
+    private_key: ((zapatabot-ssh))
 - name: git-import-builds
   type: s3
   source:
@@ -19,7 +19,7 @@ resources:
     repository: git-import
     release: false
     pre_release: true
-    access_token: {{zapatabot-github-access-token}}
+    access_token: ((zapatabot-github-access-token))
     tag_filter: ^\w+.(\w+\.\w+)
 - name: git-import-release
   type: github-release
@@ -28,7 +28,7 @@ resources:
     repository: git-import
     release: true
     pre_release: false
-    access_token: {{zapatabot-github-access-token}}
+    access_token: ((zapatabot-github-access-token))
     tag_filter: ^\w+.(\w+\.\w+)
 jobs:
 # Trigger Build
@@ -46,7 +46,7 @@ jobs:
           repository: zapatacomputing/cicd
           tag: latest
       params:
-        ZAPATABOT_SSH: {{zapatabot-ssh}}
+        ZAPATABOT_SSH: ((zapatabot-ssh))
       inputs:
       - name: git-import-repo
         path: git-import
@@ -60,7 +60,7 @@ jobs:
     trigger: true
   - task: build-binaries
     params:
-      STAR_VERSION: {{star-name-version}}
+      STAR_VERSION: sirius
     config:
       platform: linux
       image_resource:
