@@ -13,23 +13,19 @@ resources:
     access_key_id: ((development-package-storage-aws-access-key-id))
     secret_access_key: ((development-package-storage-aws-secret-access-key))
 - name: git-import-prerelease
-  type: github-release
+  type: s3
   source:
-    owner: zapatacomputing
-    repository: git-import
-    release: false
-    pre_release: true
-    access_token: ((zapatabot-github-access-token))
-    tag_filter: ^\w+.(\w+\.\w+)
+    bucket: zapata-cicd-stage-packages
+    regexp: git-import/build-(.*).tgz
+    access_key_id: ((development-package-storage-aws-access-key-id))
+    secret_access_key: ((development-package-storage-aws-secret-access-key))
 - name: git-import-release
-  type: github-release
+  type: s3
   source:
-    owner: zapatacomputing
-    repository: git-import
-    release: true
-    pre_release: false
-    access_token: ((zapatabot-github-access-token))
-    tag_filter: ^\w+.(\w+\.\w+)
+    bucket: zapata-cicd-production-packages
+    regexp: git-import/build-(.*).tgz
+    access_key_id: ((development-package-storage-aws-access-key-id))
+    secret_access_key: ((development-package-storage-aws-secret-access-key))
 jobs:
 # Trigger Build
 - name: run-tests
@@ -83,26 +79,18 @@ jobs:
   plan:
   - get: git-import-builds
     passed: [build-to-s3]
-    params:
-      unpack: true
   - put: git-import-prerelease
     params:
-      name: git-import-builds/version
-      tag: git-import-builds/version
-      commitish: git-import-builds/commit_sha
-      globs:
-      - git-import-builds/git-import-*
+      file: git-import-builds/*.tgz
+      acl: private
 # Promote Pre-Release to Release
 - name: promote-github-prerelease-to-release
   plan:
   - get: git-import-prerelease
   - put: git-import-release
     params:
-      name: git-import-prerelease/tag
-      tag: git-import-prerelease/tag
-      commitish: git-import-prerelease/commit_sha
-      globs:
-      - git-import-prerelease/git-import-*
+      file: git-import-prerelease/*.tgz
+      acl: private
 
 groups:
   - name: build
