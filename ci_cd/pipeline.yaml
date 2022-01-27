@@ -74,6 +74,63 @@ jobs:
   - put: git-import-builds
     params:
         file: release-artifacts/build-*.tgz
+# Publish git-import to docs.orquestra site
+- name: publish-testing
+  serial: true
+  plan:
+  - get: git-import-builds
+    trigger: true
+    passed: [build-to-s3]
+    params:
+      unpack: true
+  - task: deploy-to-docs-orquestra-wtf
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: zapatacomputing/cicd
+          tag: latest
+          username: ((zapatabot-dockerhub-username))
+          password: ((zapatabot-dockerhub-password))
+      params:
+        S3_BUCKET: zap-website-docs.orquestra.wtf
+        AWS_ACCESS_KEY_ID: ((aws-zapata-docs-orquestra-wtf-access-key-id))
+        AWS_SECRET_ACCESS_KEY: ((aws-zapata-docs-orquestra-wtf-secret-access-key))
+        AWS_DEFAULT_REGION: 'us-east-1'
+      inputs:
+        - name: git-import-builds
+          path: git-import
+      run:
+        path: bash
+        args: [-c, 'echo "cd git-import && mkdir -p import/bin/ && ls -la && cp git-import-* import/bin/ && aws s3 sync --sse AES256 import s3://${S3_BUCKET}/import/" > s3.sh && chmod +x s3.sh && ./s3.sh']
+- name: publish-production
+  serial: true
+  plan:
+  - get: git-import-release
+    params:
+      unpack: true
+  - task: deploy-to-docs-orquestra-io
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: zapatacomputing/cicd
+          tag: latest
+          username: ((zapatabot-dockerhub-username))
+          password: ((zapatabot-dockerhub-password))
+      params:
+        S3_BUCKET: zap-website-docs.orquestra.io
+        AWS_ACCESS_KEY_ID: ((aws-zapata-docs-orquestra-io-access-key-id))
+        AWS_SECRET_ACCESS_KEY: ((aws-zapata-docs-orquestra-io-secret-access-key))
+        AWS_DEFAULT_REGION: 'us-east-1'
+      inputs:
+        - name: git-import-release
+          path: git-import
+      run:
+        path: bash
+        args: [-c, 'echo "cd git-import && mkdir -p import/bin/ && ls -la && cp git-import-* import/bin/ && aws s3 sync --sse AES256 import s3://${S3_BUCKET}/import/" > s3.sh && chmod +x s3.sh && ./s3.sh']
 # Promote Build to Pre-Release
 - name: promote-s3-build-to-github-prerelease
   plan:
@@ -97,6 +154,10 @@ groups:
     jobs:
       - run-tests
       - build-to-s3
+  - name: deploy
+    jobs:
+      - publish-testing
+      - publish-production
   - name: promotion
     jobs:
      - promote-s3-build-to-github-prerelease
