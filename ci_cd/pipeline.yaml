@@ -41,6 +41,8 @@ jobs:
         source: 
           repository: zapatacomputing/cicd
           tag: latest
+          username: ((zapatabot-dockerhub-username))
+          password: ((zapatabot-dockerhub-password))
       params:
         ZAPATABOT_SSH: ((zapatabot-ssh))
       inputs:
